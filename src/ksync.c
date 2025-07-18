@@ -217,6 +217,7 @@ static s32 qcom_ksync_probe(struct platform_device *pdev)
 		return ret;
 	}
 
+	mutex_init(&ksync->mutex);
 	INIT_LIST_HEAD(&ksync->process_list);
 
 	idr_init(&ksync->timeline_idr);
