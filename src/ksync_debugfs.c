@@ -11,26 +11,6 @@
 #include "ksync_fence.h"
 #include "ksync_debugfs.h"
 
-static LIST_HEAD(sync_file_list_head);
-static DEFINE_SPINLOCK(sync_file_list_lock);
-void ksync_file_debug_add(struct sync_file *sync_file)
-{
-	unsigned long flags;
-
-	spin_lock_irqsave(&sync_file_list_lock, flags);
-	list_add_tail(&sync_file->sync_file_list, &sync_file_list_head);
-	spin_unlock_irqrestore(&sync_file_list_lock, flags);
-}
-
-void ksync_file_debug_remove(struct sync_file *sync_file)
-{
-	unsigned long flags;
-
-	spin_lock_irqsave(&sync_file_list_lock, flags);
-	list_del(&sync_file->sync_file_list);
-	spin_unlock_irqrestore(&sync_file_list_lock, flags);
-}
-
 static const char *ksync_status_str(int status)
 {
 	if (status < 0)
@@ -122,26 +102,6 @@ static void ksync_print_source(
 		dma_fence_put(&cur->base);
 	}
 	spin_unlock_irq(&syncsource->lock);
-}
-
-static void ksync_print_sync_file(struct seq_file *s,
-				  struct sync_file *sync_file)
-{
-	char buf[128];
-	int i;
-
-	seq_printf(s, "[%p] %s: %s\n", sync_file,
-		   sync_file_get_name(sync_file, buf, sizeof(buf)),
-		   ksync_status_str(dma_fence_get_status(sync_file->fence)));
-
-	if (dma_fence_is_array(sync_file->fence)) {
-		struct dma_fence_array *array = to_dma_fence_array(sync_file->fence);
-
-		for (i = 0; i < array->num_fences; ++i)
-			ksync_print_fence(s, array->fences[i], true);
-	} else {
-		ksync_print_fence(s, sync_file->fence, true);
-	}
 }
 
 static int ksync_client_info_show(struct seq_file *s, void *unused)
