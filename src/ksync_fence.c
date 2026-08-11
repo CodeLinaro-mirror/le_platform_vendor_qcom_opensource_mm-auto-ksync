@@ -8,6 +8,7 @@
 #include <linux/slab.h>
 #include <linux/uaccess.h>
 #include <linux/jiffies.h>
+#include <linux/version.h>
 
 #include "ksync_fence.h"
 #include "ksync_timeline.h"
@@ -188,8 +189,15 @@ static struct dma_fence *ksync_fence_array_create(
 		goto out;
 	}
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(7, 2, 0)
 	array = dma_fence_array_create(count, fences,
 			dma_fence_context_alloc(1), 0, any);
+#else
+	array = dma_fence_array_create(count, fences,
+			dma_fence_context_alloc(1), 0);
+	if (array && any)
+		atomic_set(&array->num_pending, 1);
+#endif
 	if (array)
 		out_fence = &array->base;
 	else
