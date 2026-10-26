@@ -13,14 +13,9 @@ static void ksync_timeline_release(struct kref *kref)
 					struct ksync_timeline,
 					kref);
 	struct ksync_priv *dev_priv = timeline->dev_priv;
-	struct qcom_ksync *ksync = dev_priv->dev;
 
 	trace_ksync_timeline_release(timeline);
 	ksync_process_priv_put(dev_priv);
-	spin_lock(&ksync->timeline_lock);
-	idr_remove(&ksync->timeline_idr, timeline->id);
-	timeline->id = 0;
-	spin_unlock(&ksync->timeline_lock);
 
 	kfree(timeline);
 }
@@ -105,6 +100,7 @@ void ksync_timeline_add_fence(struct ksync_timeline *timeline,
 	struct rb_node **p = &timeline->rb_tree.rb_node;
 	struct rb_node *parent = NULL;
 	struct ksync_fence *fence = *out_fence;
+	struct ksync_fence *dup = NULL;
 
 	spin_lock_irqsave(&timeline->fence_lock, flags);
 	while (*p) {
@@ -114,8 +110,7 @@ void ksync_timeline_add_fence(struct ksync_timeline *timeline,
 		node = rb_entry(parent, typeof(*node), rb_node);
 		if (fence->seqno == node->seqno) {
 			if (dma_fence_get_rcu(&node->base)) {
-				ksync_timeline_put(timeline);
-				kfree(fence);
+				dup = fence;
 				*out_fence = node;
 				pr_debug("fence seqno %llu exists\n", node->seqno);
 				goto unlock;
@@ -139,6 +134,14 @@ void ksync_timeline_add_fence(struct ksync_timeline *timeline,
 
 unlock:
 	spin_unlock_irqrestore(&timeline->fence_lock, flags);
+
+	/*
+	 * Drop the discarded duplicate's reference after releasing
+	 * fence_lock: dma_fence_put() may invoke ksync_fence_release(),
+	 * which itself takes fence_lock and would deadlock if nested.
+	 */
+	if (dup)
+		dma_fence_put(&dup->base);
 }
 
 static long ksync_timeline_destruct(struct ksync_priv *dev_priv,
@@ -184,6 +187,8 @@ static long ksync_timeline_destroy(
 
 	spin_lock(&ksync->timeline_lock);
 	timeline = idr_find(&ksync->timeline_idr, id);
+	if (timeline)
+		idr_remove(&ksync->timeline_idr, id);
 	spin_unlock(&ksync->timeline_lock);
 
 	if (timeline == NULL)
@@ -349,8 +354,10 @@ void ksync_timeline_process_release(
 
 	spin_lock(&ksync->timeline_lock);
 	idr_for_each_entry(&ksync->timeline_idr, cur, idr) {
-		if (cur->dev_priv == dev_priv)
+		if (cur->dev_priv == dev_priv) {
+			idr_remove(&ksync->timeline_idr, cur->id);
 			list_add(&cur->free_node, &released);
+		}
 	}
 	spin_unlock(&ksync->timeline_lock);
 

@@ -74,14 +74,14 @@ static void ksync_print_timeline(
 	seq_printf(s, "%s: %llu refcnt: %d\n", timeline->name,
 			timeline->signaled_seqno, kref_read(&timeline->kref));
 
-	spin_lock_irq(&timeline->lock);
+	spin_lock_irq(&timeline->fence_lock);
 	list_for_each_entry(cur, &timeline->fence_list, link) {
 		if (!dma_fence_get_rcu(&cur->base))
 			continue;
 		ksync_print_fence(s, &cur->base, true);
 		dma_fence_put(&cur->base);
 	}
-	spin_unlock_irq(&timeline->lock);
+	spin_unlock_irq(&timeline->fence_lock);
 }
 
 static void ksync_print_source(

@@ -347,6 +347,11 @@ static void ksync_fence_release(struct dma_fence *base)
 	}
 	spin_unlock_irqrestore(&timeline->fence_lock, flags);
 
+	/*
+	 * No locking needed here: refcount is already 0, so no other
+	 * thread can hold a reference to add callbacks/wait on this fence
+	 * concurrently with this signal.
+	 */
 	dma_fence_signal_locked(base);
 	ksync_timeline_put(timeline);
 
