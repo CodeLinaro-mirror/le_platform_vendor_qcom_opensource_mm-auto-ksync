@@ -1,7 +1,7 @@
-// SPDX-License-Ideksync_ntifier: GPL-2.0-only
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <linux/types.h>
@@ -189,7 +189,7 @@ static struct dma_fence *ksync_fence_array_create(
 		goto out;
 	}
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(7, 2, 0)
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(7, 2, 0))
 	array = dma_fence_array_create(count, fences,
 			dma_fence_context_alloc(1), 0, any);
 #else
@@ -355,6 +355,7 @@ out:
 	return;
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 16, 0))
 static void ksync_fence_value_str(struct dma_fence *base,
 				char *str, s32 size)
 {
@@ -376,6 +377,7 @@ static void ksync_fence_value_str(struct dma_fence *base,
 out:
 	return;
 }
+#endif
 
 static const struct dma_fence_ops ksync_fence_ops = {
 	.get_driver_name = ksync_get_driver_name,
@@ -383,8 +385,10 @@ static const struct dma_fence_ops ksync_fence_ops = {
 	.enable_signaling = ksync_enable_signaling,
 	.signaled = ksync_is_signaled,
 	.release = ksync_fence_release,
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 16, 0))
 	.fence_value_str = ksync_fence_value_str,
 	.timeline_value_str = ksync_timeline_value_str,
+#endif
 };
 
 long ksync_ioctl_fence_create(struct ksync_priv *dev_priv,

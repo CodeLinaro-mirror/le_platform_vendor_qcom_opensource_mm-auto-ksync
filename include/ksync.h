@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2020-2022, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #ifndef __KSYNC_H__
@@ -14,6 +14,7 @@
 #include <linux/spinlock.h>
 #include <linux/sync_file.h>
 #include <uapi/linux/msm_ksync.h>
+#include <linux/vmalloc.h>
 #include <linux/file.h>
 #include <linux/list.h>
 #include <linux/kref.h>
