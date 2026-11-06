@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  *
  */
 #include <linux/debugfs.h>
+#include <linux/version.h>
 
 #include "ksync.h"
 #include "ksync_timeline.h"
@@ -43,6 +44,7 @@ static void ksync_print_fence(struct seq_file *s,
 		seq_printf(s, "@%lld.%09ld", (s64)ts64.tv_sec, ts64.tv_nsec);
 	}
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 16, 0))
 	if (base->ops->timeline_value_str &&
 		base->ops->fence_value_str) {
 		char value[64];
@@ -61,6 +63,7 @@ static void ksync_print_fence(struct seq_file *s,
 				seq_printf(s, " / %s", value);
 		}
 	}
+#endif
 
 	seq_putc(s, '\n');
 }

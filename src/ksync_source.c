@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2012-2019, 2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2025, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
+
+#include <linux/version.h>
 
 #include "ksync_source.h"
 #include "ksync_trace.h"
@@ -332,6 +334,7 @@ static const char *ksync_source_driver_name(struct dma_fence *base)
 	return "ksync-syncsource-timeline";
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 16, 0))
 static void ksync_source_fence_value_str(struct dma_fence *base,
 						char *str, int size)
 {
@@ -341,6 +344,7 @@ static void ksync_source_fence_value_str(struct dma_fence *base,
 	 */
 	snprintf(str, size, "%llu", base->context);
 }
+#endif
 
 static const struct dma_fence_ops ksync_source_fence_ops = {
 	.get_driver_name = ksync_source_driver_name,
@@ -348,6 +352,7 @@ static const struct dma_fence_ops ksync_source_fence_ops = {
 	.enable_signaling = ksync_source_enable_signaling,
 	.wait = dma_fence_default_wait,
 	.release = ksync_source_fence_release,
-
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 16, 0))
 	.fence_value_str = ksync_source_fence_value_str,
+#endif
 };

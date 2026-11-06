@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2024-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #undef TRACE_SYSTEM
@@ -15,6 +15,13 @@
 #define TRACE_INCLUDE_FILE ksync_trace
 
 #include <linux/tracepoint.h>
+#include <linux/version.h>
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0))
+#define ksync_assign_str(dst, src) __assign_str(dst)
+#else
+#define ksync_assign_str(dst, src) __assign_str(dst, src)
+#endif
 
 struct ksync_timeline;
 struct ksync_fence;
@@ -35,7 +42,7 @@ DECLARE_EVENT_CLASS(ksync_timeline,
 	),
 
 	TP_fast_assign(
-		__assign_str(name, timeline->name);
+		ksync_assign_str(name, timeline->name);
 		__entry->id = timeline->id;
 		__entry->is64 = timeline->is64;
 		__entry->seqno = timeline->signaled_seqno;
@@ -91,7 +98,7 @@ DECLARE_EVENT_CLASS(ksync_fence,
 	),
 
 	TP_fast_assign(
-		__assign_str(name, fence->timeline->name);
+		ksync_assign_str(name, fence->timeline->name);
 		__entry->id = fence->timeline->id;
 		__entry->fence = (long)(void *)fence;
 		__entry->seqno = fence->seqno;
@@ -137,7 +144,7 @@ DECLARE_EVENT_CLASS(ksync_source_fence,
 	),
 
 	TP_fast_assign(
-		__assign_str(name, fence->parent->name);
+		ksync_assign_str(name, fence->parent->name);
 		__entry->id = fence->parent->id;
 		__entry->refcnt = kref_read(&fence->base.refcount);
 	),
